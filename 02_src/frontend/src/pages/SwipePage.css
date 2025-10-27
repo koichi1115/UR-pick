@@ -1,0 +1,218 @@
+/* SwipePage Styles */
+
+.swipe-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ローディング状態 */
+.swipe-page__loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.swipe-page__loading-text {
+  color: white;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+/* 完了画面 */
+.swipe-page__complete {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  gap: 1.5rem;
+}
+
+.swipe-page__complete-icon {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: #48bb78;
+  color: white;
+  font-size: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.swipe-page__complete-title {
+  color: white;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.swipe-page__complete-message {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.swipe-page__complete-stats {
+  display: flex;
+  gap: 2rem;
+  margin: 1rem 0;
+}
+
+.swipe-page__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.swipe-page__stat-value {
+  color: white;
+  font-size: 3rem;
+  font-weight: 700;
+}
+
+.swipe-page__stat-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ヘッダー */
+.swipe-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background-color: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.swipe-page__back-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.swipe-page__back-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.swipe-page__query {
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  flex: 1;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 1rem;
+}
+
+.swipe-page__counter {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  font-weight: 600;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* メインコンテンツ */
+.swipe-page__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.swipe-page__instruction {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+/* カードコンテナ */
+.swipe-page__cards {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  flex-shrink: 0;
+}
+
+.swipe-page__next-card {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0.3;
+  filter: blur(2px);
+  transform: scale(0.95);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* レスポンシブ */
+@media (max-width: 640px) {
+  .swipe-page__header {
+    padding: 1rem;
+  }
+
+  .swipe-page__back-button {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+  }
+
+  .swipe-page__query {
+    font-size: 0.875rem;
+  }
+
+  .swipe-page__counter {
+    font-size: 0.875rem;
+    min-width: 60px;
+  }
+
+  .swipe-page__content {
+    padding: 1rem 0.5rem;
+  }
+
+  .swipe-page__cards {
+    height: 550px;
+  }
+
+  .swipe-page__complete-icon {
+    width: 80px;
+    height: 80px;
+    font-size: 3rem;
+  }
+
+  .swipe-page__complete-title {
+    font-size: 1.5rem;
+  }
+
+  .swipe-page__complete-message {
+    font-size: 1rem;
+  }
+
+  .swipe-page__stat-value {
+    font-size: 2rem;
+  }
+}

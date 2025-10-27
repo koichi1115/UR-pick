@@ -15,7 +15,7 @@ Kiro-style Spec Driven Development implementation using claude code slash comman
 **Specs** (`.kiro/specs/`) - Formalize development process for individual features
 
 ### Active Specifications
-- **ur-pick**: AIレコメンデーション型リクエストベースECサービス
+- **ur-pick-platform**: AIレコメンデーション型リクエストベースECサービス（「商品がないECサイト」コンセプト）
 - Use `/kiro:spec-status [feature-name]` to check progress
 
 ## Development Guidelines

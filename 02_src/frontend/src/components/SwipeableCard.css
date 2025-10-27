@@ -1,0 +1,96 @@
+/* SwipeableCard Component Styles */
+
+.swipeable-card {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swipeable-card__animated {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  will-change: transform, opacity;
+}
+
+/* スワイプインジケーター */
+.swipeable-card__indicator {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  font-weight: 700;
+  z-index: 10;
+  pointer-events: none;
+  animation: pulse 0.3s ease-in-out;
+}
+
+.swipeable-card__indicator--like {
+  right: 20px;
+  background-color: rgba(72, 187, 120, 0.95);
+  color: white;
+  border: 3px solid #48bb78;
+}
+
+.swipeable-card__indicator--dislike {
+  left: 20px;
+  background-color: rgba(245, 101, 101, 0.95);
+  color: white;
+  border: 3px solid #f56565;
+}
+
+.swipeable-card__indicator-icon {
+  font-size: 3rem;
+}
+
+.swipeable-card__indicator-text {
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@keyframes pulse {
+  0% {
+    transform: translateY(-50%) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* レスポンシブ */
+@media (max-width: 640px) {
+  .swipeable-card__animated {
+    max-width: 100%;
+  }
+
+  .swipeable-card__indicator {
+    padding: 1rem;
+  }
+
+  .swipeable-card__indicator-icon {
+    font-size: 2rem;
+  }
+
+  .swipeable-card__indicator-text {
+    font-size: 1rem;
+  }
+
+  .swipeable-card__indicator--like {
+    right: 10px;
+  }
+
+  .swipeable-card__indicator--dislike {
+    left: 10px;
+  }
+}

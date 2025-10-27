@@ -1,0 +1,103 @@
+/* SwipeButtons Component Styles */
+
+.swipe-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.swipe-buttons__button {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: none;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swipe-buttons__button:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.swipe-buttons__button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.swipe-buttons__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.swipe-buttons__button--dislike {
+  border: 3px solid #f56565;
+}
+
+.swipe-buttons__button--dislike:hover:not(:disabled) {
+  background-color: #f56565;
+}
+
+.swipe-buttons__button--dislike:hover:not(:disabled) .swipe-buttons__icon {
+  color: white;
+}
+
+.swipe-buttons__button--like {
+  width: 80px;
+  height: 80px;
+  border: 3px solid #48bb78;
+}
+
+.swipe-buttons__button--like:hover:not(:disabled) {
+  background-color: #48bb78;
+}
+
+.swipe-buttons__button--like:hover:not(:disabled) .swipe-buttons__icon {
+  color: white;
+}
+
+.swipe-buttons__icon {
+  font-size: 2rem;
+  transition: color 0.2s ease-in-out;
+}
+
+.swipe-buttons__button--dislike .swipe-buttons__icon {
+  color: #f56565;
+}
+
+.swipe-buttons__button--like .swipe-buttons__icon {
+  color: #48bb78;
+  font-size: 2.5rem;
+}
+
+/* レスポンシブ */
+@media (max-width: 640px) {
+  .swipe-buttons {
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+  }
+
+  .swipe-buttons__button {
+    width: 60px;
+    height: 60px;
+  }
+
+  .swipe-buttons__button--like {
+    width: 70px;
+    height: 70px;
+  }
+
+  .swipe-buttons__icon {
+    font-size: 1.5rem;
+  }
+
+  .swipe-buttons__button--like .swipe-buttons__icon {
+    font-size: 2rem;
+  }
+}

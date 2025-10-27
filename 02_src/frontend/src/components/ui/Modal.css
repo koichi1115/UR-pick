@@ -1,0 +1,148 @@
+/* Modal Component Styles */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: modal-fade-in 0.2s ease-out;
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal {
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: modal-slide-up 0.3s ease-out;
+}
+
+@keyframes modal-slide-up {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* サイズバリアント */
+.modal--small {
+  width: 100%;
+  max-width: 400px;
+}
+
+.modal--medium {
+  width: 100%;
+  max-width: 600px;
+}
+
+.modal--large {
+  width: 100%;
+  max-width: 900px;
+}
+
+/* ヘッダー */
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+}
+
+.modal__close {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background-color: transparent;
+  color: #718096;
+  font-size: 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal__close:hover {
+  background-color: #f7fafc;
+  color: #2d3748;
+}
+
+/* コンテンツ */
+.modal__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+/* レスポンシブ */
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal {
+    max-height: 95vh;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    animation: modal-slide-up-mobile 0.3s ease-out;
+  }
+
+  @keyframes modal-slide-up-mobile {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  .modal--small,
+  .modal--medium,
+  .modal--large {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .modal__header {
+    padding: 1rem;
+  }
+
+  .modal__title {
+    font-size: 1.25rem;
+  }
+
+  .modal__content {
+    padding: 1rem;
+  }
+}

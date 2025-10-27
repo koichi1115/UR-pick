@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+02_src/*/node_modules/
+
+# Build output
+dist/
+build/
+02_src/*/dist/
+02_src/*/build/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+02_src/*/.env
+02_src/*/.env.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# TypeScript
+*.tsbuildinfo
+02_src/*/tsconfig.tsbuildinfo
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+temp/
+tmp/
