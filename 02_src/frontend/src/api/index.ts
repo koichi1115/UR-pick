@@ -4,3 +4,4 @@
 export * from './client';
 export * from './recommendations';
 export * from './swipes';
+export * from './users';

@@ -2,6 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import { config, validateConfig } from './config/index.js';
 import { errorHandler, notFoundHandler, requestLogger } from './middleware/index.js';
+import {
+  securityHeaders,
+  apiRateLimiter,
+  requestTimeout,
+  sanitizeInput,
+} from './middleware/security.js';
+import { testConnection } from './utils/db.js';
 import { logger } from './utils/logger.js';
 import router from './routes/index.js';
 
@@ -13,9 +20,26 @@ const app = express();
 /**
  * Middleware configuration
  */
-app.use(cors({ origin: config.server.corsOrigin }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Security headers
+app.use(securityHeaders);
+app.use(requestTimeout(30000)); // 30 second timeout
+
+// CORS
+app.use(
+  cors({
+    origin: config.server.corsOrigin,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
+// Body parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Input sanitization
+app.use(sanitizeInput);
 
 // Request logging
 app.use(requestLogger);
@@ -39,6 +63,8 @@ app.get('/', (_req, res) => {
 /**
  * API routes
  */
+// Rate limiting for all API routes
+app.use('/api', apiRateLimiter);
 app.use('/api', router);
 
 /**
@@ -52,11 +78,29 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 /**
+ * Graceful shutdown handler
+ */
+const gracefulShutdown = () => {
+  logger.info('Received shutdown signal, closing server gracefully...');
+  process.exit(0);
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
+/**
  * Start server
  */
-function startServer() {
+async function startServer() {
   try {
     validateConfig();
+
+    // Test database connection
+    const dbConnected = await testConnection();
+    if (!dbConnected) {
+      logger.error('Failed to connect to database, exiting...');
+      process.exit(1);
+    }
 
     const port = config.server.port;
     app.listen(port, () => {

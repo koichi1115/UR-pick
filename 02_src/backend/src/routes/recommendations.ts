@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { RecommendationController } from '../controllers/recommendations.js';
+import { validateRecommendationRequest } from '../middleware/validation.js';
+import { strictRateLimiter } from '../middleware/security.js';
 
 const router = Router();
 const controller = new RecommendationController();
@@ -17,6 +19,11 @@ const controller = new RecommendationController();
  *   maxPrice?: number        // Maximum price filter (optional)
  * }
  */
-router.post('/', controller.getRecommendations.bind(controller));
+router.post(
+  '/',
+  strictRateLimiter,
+  validateRecommendationRequest,
+  controller.getRecommendations.bind(controller)
+);
 
 export default router;

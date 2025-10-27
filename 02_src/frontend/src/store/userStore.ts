@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SwipeAction } from '../types';
+import { createUser, updateUserPreferences } from '../api';
 
 /**
  * ユーザー設定の型定義
@@ -34,9 +35,13 @@ interface UserState {
   // スワイプ数
   swipeCount: number;
 
+  // 初期化済みフラグ
+  isInitialized: boolean;
+
   // Actions
+  initializeUser: () => Promise<void>;
   setUserId: (userId: string) => void;
-  updatePreferences: (preferences: Partial<UserPreferences>) => void;
+  updatePreferences: (preferences: Partial<UserPreferences>) => Promise<void>;
   addSwipe: (productId: string, action: SwipeAction) => void;
   reset: () => void;
 }
@@ -47,18 +52,51 @@ interface UserState {
  */
 export const useUserStore = create<UserState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       userId: null,
       preferences: {},
       swipeHistory: [],
       swipeCount: 0,
+      isInitialized: false,
+
+      initializeUser: async () => {
+        const state = get();
+        if (state.isInitialized) return;
+
+        // Create new user if no userId exists
+        if (!state.userId) {
+          try {
+            const { userId } = await createUser();
+            set({ userId, isInitialized: true });
+          } catch (error) {
+            console.error('Failed to create user:', error);
+          }
+        } else {
+          set({ isInitialized: true });
+        }
+      },
 
       setUserId: (userId) => set({ userId }),
 
-      updatePreferences: (preferences) =>
-        set((state) => ({
-          preferences: { ...state.preferences, ...preferences },
-        })),
+      updatePreferences: async (preferences) => {
+        const state = get();
+        if (!state.userId) return;
+
+        try {
+          // Map frontend preference names to backend API format
+          const apiPreferences = {
+            priceRange: preferences.preferredPriceRange,
+            categories: preferences.preferredCategories,
+            brands: preferences.preferredBrands,
+          };
+          await updateUserPreferences(state.userId, apiPreferences);
+          set((state) => ({
+            preferences: { ...state.preferences, ...preferences },
+          }));
+        } catch (error) {
+          console.error('Failed to update preferences:', error);
+        }
+      },
 
       addSwipe: (productId, action) =>
         set((state) => ({
@@ -79,6 +117,7 @@ export const useUserStore = create<UserState>()(
           preferences: {},
           swipeHistory: [],
           swipeCount: 0,
+          isInitialized: false,
         }),
     }),
     {

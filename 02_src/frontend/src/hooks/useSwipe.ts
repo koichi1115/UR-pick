@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useRecommendationStore, useUserStore, useUIStore } from '../store';
-import { recordSwipe } from '../api';
+import { recordUserSwipe } from '../api';
 import type { SwipeAction } from '../types';
 
 /**
@@ -31,11 +31,16 @@ export function useSwipe() {
 
         // バックエンドに記録（非同期、エラーは無視）
         if (userId) {
-          recordSwipe({
-            userId,
+          recordUserSwipe(userId, {
             productId: currentProduct.id,
             action,
             query: currentQuery,
+            product: {
+              name: currentProduct.name,
+              price: currentProduct.price,
+              source: currentProduct.source,
+              // category and brand would be added if available in product data
+            },
           }).catch((error) => {
             console.error('Failed to record swipe:', error);
           });
