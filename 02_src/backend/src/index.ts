@@ -106,8 +106,8 @@ async function startServer() {
     }
 
     const port = config.server.port;
-    app.listen(port, () => {
-      logger.info(`Server started on http://localhost:${port}`);
+    app.listen(port, '0.0.0.0', () => {
+      logger.info(`Server started on port ${port}`);
       logger.info(`Environment: ${config.server.nodeEnv}`);
       logger.info(`CORS origin: ${config.server.corsOrigin}`);
     });
