@@ -4,16 +4,24 @@ import { logger } from './logger.js';
 /**
  * Database configuration from environment variables
  */
-const dbConfig: PoolConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'urpick',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD,
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
-};
+const dbConfig: PoolConfig = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+    }
+  : {
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432'),
+      database: process.env.DB_NAME || 'urpick',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+    };
 
 /**
  * PostgreSQL connection pool
@@ -25,6 +33,11 @@ export const pool = new Pool(dbConfig);
  */
 export async function testConnection(): Promise<boolean> {
   try {
+    logger.info('Attempting database connection', {
+      host: process.env.DATABASE_URL ? 'using DATABASE_URL' : process.env.DB_HOST,
+      database: process.env.DATABASE_URL ? 'using DATABASE_URL' : process.env.DB_NAME,
+    });
+
     const client = await pool.connect();
     const result = await client.query('SELECT NOW()');
     client.release();
@@ -35,7 +48,11 @@ export async function testConnection(): Promise<boolean> {
 
     return true;
   } catch (error) {
-    logger.error('Database connection failed', { error });
+    logger.error('Database connection failed', {
+      error,
+      DATABASE_URL_set: !!process.env.DATABASE_URL,
+      DB_HOST_set: !!process.env.DB_HOST,
+    });
     return false;
   }
 }
