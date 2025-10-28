@@ -99,10 +99,20 @@ async function startServer() {
     validateConfig();
 
     // Test database connection
-    const dbConnected = await testConnection();
-    if (!dbConnected) {
-      logger.error('Failed to connect to database, exiting...');
-      process.exit(1);
+    const isConnected = await testConnection();
+
+    if (isConnected) {
+      // Run database migrations automatically on startup
+      try {
+        logger.info('Running database migrations...');
+        const { migrate } = await import('./database/migrate.js');
+        await migrate();
+        logger.info('Database migrations completed');
+      } catch (error) {
+        logger.warn('Database migration failed, but server will continue', { error });
+      }
+    } else {
+      logger.warn('Database connection failed, skipping migrations');
     }
 
     const port = config.server.port;

@@ -8,15 +8,16 @@ const __dirname = dirname(__filename);
 
 /**
  * Run database migrations
+ * @param closePoolAfter - Whether to close the connection pool after migration (default: false for app startup)
  */
-async function migrate() {
+async function migrate(closePoolAfter = false) {
   console.log('🔄 Starting database migration...');
 
   // Test connection first
   const isConnected = await testConnection();
   if (!isConnected) {
     console.error('❌ Cannot connect to database. Migration aborted.');
-    process.exit(1);
+    throw new Error('Database connection failed');
   }
 
   try {
@@ -46,15 +47,20 @@ async function migrate() {
 
   } catch (error) {
     console.error('❌ Migration failed:', error);
-    process.exit(1);
+    throw error;
   } finally {
-    await pool.end();
+    if (closePoolAfter) {
+      await pool.end();
+    }
   }
 }
 
 // Run migration if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  migrate();
+  migrate(true).catch((error) => {
+    console.error('Migration failed:', error);
+    process.exit(1);
+  });
 }
 
 export { migrate };
