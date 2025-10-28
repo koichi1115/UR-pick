@@ -17,6 +17,9 @@ import router from './routes/index.js';
  */
 const app = express();
 
+// Trust proxy for Railway/Vercel
+app.set('trust proxy', 1);
+
 /**
  * Middleware configuration
  */
