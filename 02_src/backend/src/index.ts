@@ -27,10 +27,33 @@ app.set('trust proxy', 1);
 app.use(securityHeaders);
 app.use(requestTimeout(30000)); // 30 second timeout
 
-// CORS
+// CORS - Allow Vercel deployments (including preview deployments)
 app.use(
   cors({
-    origin: config.server.corsOrigin,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Allow configured origin
+      if (origin === config.server.corsOrigin) {
+        return callback(null, true);
+      }
+
+      // Allow all Vercel preview deployments (*.vercel.app)
+      if (origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+
+      // Allow localhost for development
+      if (origin.startsWith('http://localhost:')) {
+        return callback(null, true);
+      }
+
+      // Reject all other origins
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
