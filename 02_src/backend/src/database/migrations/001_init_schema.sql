@@ -1,120 +1,117 @@
--- UR-pick Platform Database Schema
--- Created: 2025-10-27
--- Description: Initial database schema for UR-pick platform
+-- UR-pick Database Schema
+-- PostgreSQL 14+
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- ====================================
--- 1. users テーブル
--- ====================================
+-- Users table
 CREATE TABLE IF NOT EXISTS users (
-    user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    last_login_at TIMESTAMP
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    -- User preferences
+    preferred_price_min INTEGER,
+    preferred_price_max INTEGER,
+    preferred_categories TEXT[],
+    preferred_brands TEXT[],
+
+    -- Metadata
+    swipe_count INTEGER DEFAULT 0,
+    last_active_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Trigger to auto-update updated_at
+-- Swipes table
+CREATE TABLE IF NOT EXISTS swipes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    product_id VARCHAR(255) NOT NULL,
+    query TEXT NOT NULL,
+    action VARCHAR(20) NOT NULL CHECK (action IN ('like', 'dislike')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    -- Product snapshot (for analytics)
+    product_name TEXT,
+    product_price INTEGER,
+    product_source VARCHAR(50),
+
+    -- Index for efficient queries
+    CONSTRAINT swipes_user_product_unique UNIQUE (user_id, product_id)
+);
+
+-- Products cache table (optional - for caching frequently accessed products)
+CREATE TABLE IF NOT EXISTS products_cache (
+    id VARCHAR(255) PRIMARY KEY,
+    name TEXT NOT NULL,
+    price INTEGER NOT NULL,
+    description TEXT,
+    image_url TEXT,
+    source VARCHAR(50) NOT NULL CHECK (source IN ('amazon', 'rakuten', 'yahoo')),
+    affiliate_url TEXT NOT NULL,
+    rating DECIMAL(3, 2),
+    review_count INTEGER,
+
+    -- Cache metadata
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP WITH TIME ZONE,
+
+    -- Raw data from API (JSONB for flexibility)
+    raw_data JSONB
+);
+
+-- Recommendation history table
+CREATE TABLE IF NOT EXISTS recommendation_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    query TEXT NOT NULL,
+    strategy VARCHAR(20) NOT NULL CHECK (strategy IN ('rule-based', 'llm-based')),
+    product_count INTEGER NOT NULL,
+    processing_time INTEGER, -- milliseconds
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    -- Store product IDs for analysis
+    product_ids TEXT[]
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_swipes_user_id ON swipes(user_id);
+CREATE INDEX IF NOT EXISTS idx_swipes_created_at ON swipes(created_at);
+CREATE INDEX IF NOT EXISTS idx_swipes_action ON swipes(action);
+CREATE INDEX IF NOT EXISTS idx_products_cache_source ON products_cache(source);
+CREATE INDEX IF NOT EXISTS idx_products_cache_expires_at ON products_cache(expires_at);
+CREATE INDEX IF NOT EXISTS idx_recommendation_history_user_id ON recommendation_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_recommendation_history_created_at ON recommendation_history(created_at);
+CREATE INDEX IF NOT EXISTS idx_users_last_active_at ON users(last_active_at);
+
+-- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = NOW();
+    NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Triggers for updated_at
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
-COMMENT ON TABLE users IS 'ユーザー情報';
-COMMENT ON COLUMN users.user_id IS 'ユーザーID（UUIDv4）';
-COMMENT ON COLUMN users.created_at IS '作成日時';
-COMMENT ON COLUMN users.updated_at IS '更新日時';
-COMMENT ON COLUMN users.last_login_at IS '最終ログイン日時';
+DROP TRIGGER IF EXISTS update_products_cache_updated_at ON products_cache;
+CREATE TRIGGER update_products_cache_updated_at
+    BEFORE UPDATE ON products_cache
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
--- ====================================
--- 2. swipe_history テーブル
--- ====================================
-CREATE TABLE IF NOT EXISTS swipe_history (
-    swipe_id BIGSERIAL PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    product_id VARCHAR(255) NOT NULL,
-    product_name VARCHAR(500) NOT NULL,
-    product_source VARCHAR(50) NOT NULL,
-    direction VARCHAR(10) NOT NULL CHECK (direction IN ('left', 'right')),
-    swiped_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
+-- Comments for documentation
+COMMENT ON TABLE users IS 'User profiles and preferences';
+COMMENT ON TABLE swipes IS 'User swipe actions on products';
+COMMENT ON TABLE products_cache IS 'Cache for product data from affiliate APIs';
+COMMENT ON TABLE recommendation_history IS 'History of recommendations generated';
 
--- Indexes for swipe_history
-CREATE INDEX IF NOT EXISTS idx_swipe_history_user_swiped
-    ON swipe_history(user_id, swiped_at DESC);
-CREATE INDEX IF NOT EXISTS idx_swipe_history_user_direction
-    ON swipe_history(user_id, direction);
-
-COMMENT ON TABLE swipe_history IS 'ユーザーのスワイプ履歴';
-COMMENT ON COLUMN swipe_history.swipe_id IS 'スワイプID（自動採番）';
-COMMENT ON COLUMN swipe_history.user_id IS 'ユーザーID';
-COMMENT ON COLUMN swipe_history.product_id IS '商品ID（アフィリエイトサイトの商品ID）';
-COMMENT ON COLUMN swipe_history.product_name IS '商品名';
-COMMENT ON COLUMN swipe_history.product_source IS '商品の出典（amazon, rakuten, yahoo）';
-COMMENT ON COLUMN swipe_history.direction IS 'スワイプ方向（left or right）';
-COMMENT ON COLUMN swipe_history.swiped_at IS 'スワイプ日時';
-
--- ====================================
--- 3. purchase_history テーブル
--- ====================================
-CREATE TABLE IF NOT EXISTS purchase_history (
-    purchase_id BIGSERIAL PRIMARY KEY,
-    user_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
-    product_id VARCHAR(255) NOT NULL,
-    product_name VARCHAR(500) NOT NULL,
-    product_source VARCHAR(50) NOT NULL,
-    affiliate_url TEXT NOT NULL,
-    transitioned_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Indexes for purchase_history
-CREATE INDEX IF NOT EXISTS idx_purchase_history_user_transitioned
-    ON purchase_history(user_id, transitioned_at DESC);
-CREATE INDEX IF NOT EXISTS idx_purchase_history_product
-    ON purchase_history(product_id);
-
-COMMENT ON TABLE purchase_history IS 'ユーザーの購買遷移履歴';
-COMMENT ON COLUMN purchase_history.purchase_id IS '購買遷移ID（自動採番）';
-COMMENT ON COLUMN purchase_history.user_id IS 'ユーザーID（未認証の場合はNULL）';
-COMMENT ON COLUMN purchase_history.product_id IS '商品ID';
-COMMENT ON COLUMN purchase_history.product_name IS '商品名';
-COMMENT ON COLUMN purchase_history.product_source IS '商品の出典（amazon, rakuten, yahoo）';
-COMMENT ON COLUMN purchase_history.affiliate_url IS 'アフィリエイトURL';
-COMMENT ON COLUMN purchase_history.transitioned_at IS '遷移日時';
-
--- ====================================
--- 4. user_preferences テーブル
--- ====================================
-CREATE TABLE IF NOT EXISTS user_preferences (
-    user_id UUID PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
-    preferences JSONB NOT NULL DEFAULT '{}',
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Trigger to auto-update updated_at
-CREATE TRIGGER update_user_preferences_updated_at BEFORE UPDATE ON user_preferences
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- GIN index for JSONB
-CREATE INDEX IF NOT EXISTS idx_user_preferences_jsonb
-    ON user_preferences USING GIN (preferences);
-
-COMMENT ON TABLE user_preferences IS 'ユーザーの嗜好情報';
-COMMENT ON COLUMN user_preferences.user_id IS 'ユーザーID';
-COMMENT ON COLUMN user_preferences.preferences IS '嗜好情報（JSON形式）';
-COMMENT ON COLUMN user_preferences.updated_at IS '更新日時';
-
--- ====================================
--- Sample Data (for development)
--- ====================================
--- Uncomment to insert sample data
--- INSERT INTO users (user_id) VALUES
---     ('00000000-0000-0000-0000-000000000001'),
---     ('00000000-0000-0000-0000-000000000002');
+COMMENT ON COLUMN users.swipe_count IS 'Total number of swipes by this user (used for strategy selection)';
+COMMENT ON COLUMN swipes.action IS 'like or dislike';
+COMMENT ON COLUMN recommendation_history.strategy IS 'rule-based or llm-based';

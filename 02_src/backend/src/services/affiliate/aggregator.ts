@@ -4,6 +4,7 @@ import type { AffiliateClient, SearchParams, SearchResult } from './types.js';
 import { AmazonClient } from './amazon.js';
 import { RakutenClient } from './rakuten.js';
 import { YahooShoppingClient } from './yahoo.js';
+import { MockAffiliateClient } from './mock.js';
 
 /**
  * Aggregated search result
@@ -29,9 +30,18 @@ export class AffiliateAggregator {
 
   constructor() {
     this.clients = new Map();
-    this.clients.set('amazon', new AmazonClient());
-    this.clients.set('rakuten', new RakutenClient());
-    this.clients.set('yahoo', new YahooShoppingClient());
+
+    // Use mock client if USE_MOCK_DATA environment variable is set
+    const useMockData = process.env.USE_MOCK_DATA === 'true';
+
+    if (useMockData) {
+      logger.info('Using mock affiliate data (USE_MOCK_DATA=true)');
+      this.clients.set('mock', new MockAffiliateClient());
+    } else {
+      this.clients.set('amazon', new AmazonClient());
+      this.clients.set('rakuten', new RakutenClient());
+      this.clients.set('yahoo', new YahooShoppingClient());
+    }
   }
 
   /**

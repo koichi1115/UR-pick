@@ -27,10 +27,33 @@ app.set('trust proxy', 1);
 app.use(securityHeaders);
 app.use(requestTimeout(30000)); // 30 second timeout
 
-// CORS
+// CORS - Allow Vercel deployments (including preview deployments)
 app.use(
   cors({
-    origin: config.server.corsOrigin,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Allow configured origin
+      if (origin === config.server.corsOrigin) {
+        return callback(null, true);
+      }
+
+      // Allow all Vercel preview deployments (*.vercel.app)
+      if (origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+
+      // Allow localhost for development
+      if (origin.startsWith('http://localhost:')) {
+        return callback(null, true);
+      }
+
+      // Reject all other origins
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -99,10 +122,27 @@ async function startServer() {
     validateConfig();
 
     // Test database connection
-    const dbConnected = await testConnection();
-    if (!dbConnected) {
-      logger.error('Failed to connect to database, exiting...');
-      process.exit(1);
+    const isConnected = await testConnection();
+
+    if (isConnected) {
+      // Run database migrations automatically on startup
+      try {
+        logger.info('Running database migrations...');
+        const { migrate } = await import('./database/migrate.js');
+
+        // Reset schema if RESET_DB environment variable is set to 'true'
+        const resetSchema = process.env.RESET_DB === 'true';
+        if (resetSchema) {
+          logger.warn('RESET_DB=true detected - will drop and recreate all tables');
+        }
+
+        await migrate(false, resetSchema);
+        logger.info('Database migrations completed');
+      } catch (error) {
+        logger.warn('Database migration failed, but server will continue', { error });
+      }
+    } else {
+      logger.warn('Database connection failed, skipping migrations');
     }
 
     const port = config.server.port;

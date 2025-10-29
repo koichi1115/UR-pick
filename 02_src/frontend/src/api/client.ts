@@ -3,6 +3,9 @@
  */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
+// デバッグ用: 使用中のAPI URLをコンソールに出力
+console.log('[UR-pick] API Base URL:', API_BASE_URL);
+
 /**
  * Custom error class for API errors
  */
@@ -27,6 +30,9 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
+  // デバッグ用: リクエストURLをコンソールに出力
+  console.log('[UR-pick] API Request:', options.method || 'GET', url);
+
   const config: RequestInit = {
     ...options,
     headers: {
@@ -40,6 +46,7 @@ export async function apiRequest<T>(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error('[UR-pick] API Error:', response.status, response.statusText, errorData);
       throw new ApiError(
         response.status,
         errorData.message || response.statusText,
@@ -47,11 +54,13 @@ export async function apiRequest<T>(
       );
     }
 
+    console.log('[UR-pick] API Success:', response.status);
     return response.json();
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
     }
+    console.error('[UR-pick] Network Error:', error);
     throw new ApiError(0, 'Network error', error);
   }
 }
