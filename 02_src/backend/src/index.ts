@@ -106,7 +106,14 @@ async function startServer() {
       try {
         logger.info('Running database migrations...');
         const { migrate } = await import('./database/migrate.js');
-        await migrate();
+
+        // Reset schema if RESET_DB environment variable is set to 'true'
+        const resetSchema = process.env.RESET_DB === 'true';
+        if (resetSchema) {
+          logger.warn('RESET_DB=true detected - will drop and recreate all tables');
+        }
+
+        await migrate(false, resetSchema);
         logger.info('Database migrations completed');
       } catch (error) {
         logger.warn('Database migration failed, but server will continue', { error });

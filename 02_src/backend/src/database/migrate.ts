@@ -9,8 +9,9 @@ const __dirname = dirname(__filename);
 /**
  * Run database migrations
  * @param closePoolAfter - Whether to close the connection pool after migration (default: false for app startup)
+ * @param resetSchema - Whether to reset (drop) existing schema before migration (default: false)
  */
-async function migrate(closePoolAfter = false) {
+async function migrate(closePoolAfter = false, resetSchema = false) {
   console.log('🔄 Starting database migration...');
 
   // Test connection first
@@ -21,6 +22,15 @@ async function migrate(closePoolAfter = false) {
   }
 
   try {
+    // Reset schema if requested
+    if (resetSchema) {
+      console.log('⚠️  Resetting database schema (dropping all tables)...');
+      const resetPath = join(__dirname, 'reset-schema.sql');
+      const resetSql = await readFile(resetPath, 'utf-8');
+      await pool.query(resetSql);
+      console.log('✅ Schema reset completed');
+    }
+
     // Read migration file
     const migrationPath = join(__dirname, 'migrations', '001_init_schema.sql');
     const sql = await readFile(migrationPath, 'utf-8');
